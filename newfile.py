@@ -2,6 +2,8 @@ import os
 import asyncio
 import threading
 from flask import Flask
+from PIL import Image
+import pytesseract
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
@@ -25,10 +27,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "Rasm qabul qilindi ✅\n"
-        "Keyingi bosqichda tahlil qo‘shiladi."
+    photo = await update.message.photo[-1].get_file()
+
+    file_path = "sofascore.png"
+    await photo.download_to_drive(file_path)
+
+    text = pytesseract.image_to_string(
+        Image.open(file_path),
+        lang="eng"
     )
+
+    if text.strip():
+        await update.message.reply_text(
+            "O‘qilgan matn:\n\n" + text[:4000]
+        )
+    else:
+        await update.message.reply_text(
+            "Rasmdan matn topilmadi ❌"
+        )
 
 
 async def main():
